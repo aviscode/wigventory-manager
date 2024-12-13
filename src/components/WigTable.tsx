@@ -25,51 +25,53 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Style</TableHead>
-            <TableHead>Color</TableHead>
-            <TableHead>Length</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredWigs.map((wig) => (
-            <TableRow key={wig.id}>
-              <TableCell>{wig.name}</TableCell>
-              <TableCell>{wig.style}</TableCell>
-              <TableCell>{wig.color}</TableCell>
-              <TableCell>{wig.length}</TableCell>
-              <TableCell>${wig.price}</TableCell>
-              <TableCell>{wig.stock}</TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(wig.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(wig.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] min-w-[200px]">Name</TableHead>
+              <TableHead className="min-w-[100px]">Style</TableHead>
+              <TableHead className="min-w-[100px]">Color</TableHead>
+              <TableHead className="min-w-[100px]">Length</TableHead>
+              <TableHead className="min-w-[100px]">Price</TableHead>
+              <TableHead className="min-w-[80px]">Stock</TableHead>
+              <TableHead className="min-w-[100px]">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredWigs.map((wig) => (
+              <TableRow key={wig.id}>
+                <TableCell className="font-medium">{wig.name}</TableCell>
+                <TableCell>{wig.style}</TableCell>
+                <TableCell>{wig.color}</TableCell>
+                <TableCell>{wig.length}</TableCell>
+                <TableCell>${wig.price}</TableCell>
+                <TableCell>{wig.stock}</TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(wig.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(wig.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
