@@ -13,7 +13,9 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     (wig) =>
       wig.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wig.style.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wig.color.toLowerCase().includes(searchTerm.toLowerCase())
+      wig.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.clientName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleEdit = (id: string) => {
@@ -30,24 +32,44 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px] min-w-[200px]">Name</TableHead>
+              <TableHead className="min-w-[100px]">Barcode</TableHead>
+              <TableHead className="min-w-[150px]">Name</TableHead>
               <TableHead className="min-w-[100px]">Style</TableHead>
-              <TableHead className="min-w-[100px]">Color</TableHead>
               <TableHead className="min-w-[100px]">Length</TableHead>
+              <TableHead className="min-w-[100px]">Color</TableHead>
+              <TableHead className="min-w-[100px]">Hair Type</TableHead>
+              <TableHead className="min-w-[100px]">Texture</TableHead>
+              <TableHead className="min-w-[80px]">Size</TableHead>
               <TableHead className="min-w-[100px]">Price</TableHead>
-              <TableHead className="min-w-[80px]">Stock</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[150px]">Client Name</TableHead>
+              <TableHead className="min-w-[100px]">New Order</TableHead>
+              <TableHead className="min-w-[100px]">Location</TableHead>
+              <TableHead className="min-w-[100px]">Cost Price</TableHead>
+              <TableHead className="min-w-[120px]">Receive Date</TableHead>
+              <TableHead className="min-w-[120px]">Sold Date</TableHead>
               <TableHead className="min-w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredWigs.map((wig) => (
               <TableRow key={wig.id}>
+                <TableCell>{wig.barcode}</TableCell>
                 <TableCell className="font-medium">{wig.name}</TableCell>
                 <TableCell>{wig.style}</TableCell>
-                <TableCell>{wig.color}</TableCell>
                 <TableCell>{wig.length}</TableCell>
+                <TableCell>{wig.color}</TableCell>
+                <TableCell>{wig.hairType}</TableCell>
+                <TableCell>{wig.hairTexture}</TableCell>
+                <TableCell>{wig.size}</TableCell>
                 <TableCell>${wig.price}</TableCell>
-                <TableCell>{wig.stock}</TableCell>
+                <TableCell>{wig.status}</TableCell>
+                <TableCell>{wig.clientName || "-"}</TableCell>
+                <TableCell>{wig.newOrder ? "Yes" : "No"}</TableCell>
+                <TableCell>{wig.location}</TableCell>
+                <TableCell>${wig.costPrice}</TableCell>
+                <TableCell>{wig.receiveDate}</TableCell>
+                <TableCell>{wig.soldDate || "-"}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button
