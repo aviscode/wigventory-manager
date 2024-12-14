@@ -1,18 +1,15 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { WigTableHeader } from "./wigs/WigTableHeader";
+import { WigDetailsDialog } from "./wigs/WigDetailsDialog";
+import { DeleteWigDialog } from "./wigs/DeleteWigDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WigFormFields } from "./wigs/WigFormFields";
 
 interface WigTableProps {
   searchTerm: string;
@@ -27,7 +24,10 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
   const [selectedWig, setSelectedWig] = useState<any | null>(null);
   const [deleteWig, setDeleteWig] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editWigData, setEditWigData] = useState<any>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   const { data: wigs, isLoading } = useQuery({
@@ -49,28 +49,6 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     },
   });
 
-  const sortedWigs = [...(wigs || [])].sort((a, b) => {
-    if (!sortConfig) return 0;
-    
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-    
-    if (aValue === null) return 1;
-    if (bValue === null) return -1;
-    
-    const comparison = aValue > bValue ? 1 : -1;
-    return sortConfig.direction === 'asc' ? comparison : -comparison;
-  });
-
-  const filteredWigs = sortedWigs.filter(
-    (wig) =>
-      wig.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wig.style.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wig.color?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wig.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wig.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const handleSort = (key: string) => {
     setSortConfig(current => {
       if (!current || current.key !== key) {
@@ -83,40 +61,93 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     });
   };
 
-  const handleEdit = async (wig: any) => {
-    setSelectedWig(wig);
+  const handleFilterChange = (column: string, value: string) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  const handleEdit = (wig: any) => {
+    setEditWigData(wig);
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (!deleteWig) return;
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!editWigData.barcode) newErrors.barcode = "Barcode is required";
+    if (!editWigData.name) newErrors.name = "Name is required";
+    if (!editWigData.style) newErrors.style = "Style is required";
+    if (!editWigData.price) {
+      newErrors.price = "Price is required";
+    } else if (isNaN(Number(editWigData.price)) || Number(editWigData.price) <= 0) {
+      newErrors.price = "Price must be a valid positive number";
+    }
 
-    const { error } = await supabase
-      .from('wigs')
-      .delete()
-      .eq('id', deleteWig.id);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (error) {
-      console.error('Error deleting wig:', error);
-      toast.error("Failed to delete wig");
+  const handleSaveEdit = async () => {
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
-    toast.success("Wig deleted successfully!");
-    queryClient.invalidateQueries({ queryKey: ['wigs'] });
-    setDeleteWig(null);
+    try {
+      const { error } = await supabase
+        .from('wigs')
+        .update({
+          ...editWigData,
+          price: Number(editWigData.price),
+          cost_price: editWigData.cost_price ? Number(editWigData.cost_price) : null,
+        })
+        .eq('id', editWigData.id);
+
+      if (error) throw error;
+
+      toast.success("Wig updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ['wigs'] });
+      setIsEditDialogOpen(false);
+      setEditWigData(null);
+    } catch (error) {
+      console.error('Error updating wig:', error);
+      toast.error("Failed to update wig");
+    }
   };
+
+  const filteredAndSortedWigs = (wigs || [])
+    .filter(wig => {
+      // Apply column filters
+      return Object.entries(filterValues).every(([column, value]) => {
+        if (!value) return true;
+        return String(wig[column]).toLowerCase().includes(value.toLowerCase());
+      });
+    })
+    .filter(wig =>
+      wig.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.style.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.color?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wig.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (!sortConfig) return 0;
+      
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+      
+      const comparison = aValue > bValue ? 1 : -1;
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
 
   if (isLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
-
-  const renderSortIcon = (key: string) => {
-    if (sortConfig?.key !== key) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
-  };
 
   return (
     <>
@@ -124,7 +155,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
         <div className="overflow-x-auto">
           {/* Mobile view */}
           <div className="md:hidden">
-            {filteredWigs.map((wig) => (
+            {filteredAndSortedWigs.map((wig) => (
               <div
                 key={wig.id}
                 className="p-4 border-b cursor-pointer hover:bg-gray-50"
@@ -166,49 +197,14 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
 
           {/* Desktop view */}
           <Table className="hidden md:table">
-            <TableHeader>
-              <TableRow>
-                <TableHead 
-                  className="min-w-[100px] cursor-pointer"
-                  onClick={() => handleSort('barcode')}
-                >
-                  Barcode {renderSortIcon('barcode')}
-                </TableHead>
-                <TableHead 
-                  className="min-w-[150px] cursor-pointer"
-                  onClick={() => handleSort('name')}
-                >
-                  Name {renderSortIcon('name')}
-                </TableHead>
-                <TableHead 
-                  className="min-w-[100px] cursor-pointer"
-                  onClick={() => handleSort('style')}
-                >
-                  Style {renderSortIcon('style')}
-                </TableHead>
-                <TableHead 
-                  className="min-w-[100px] cursor-pointer"
-                  onClick={() => handleSort('color')}
-                >
-                  Color {renderSortIcon('color')}
-                </TableHead>
-                <TableHead 
-                  className="min-w-[100px] cursor-pointer"
-                  onClick={() => handleSort('price')}
-                >
-                  Price {renderSortIcon('price')}
-                </TableHead>
-                <TableHead 
-                  className="min-w-[100px] cursor-pointer"
-                  onClick={() => handleSort('status')}
-                >
-                  Status {renderSortIcon('status')}
-                </TableHead>
-                <TableHead className="min-w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+            <WigTableHeader
+              onSort={handleSort}
+              sortConfig={sortConfig}
+              onFilterChange={handleFilterChange}
+              filterValues={filterValues}
+            />
             <TableBody>
-              {filteredWigs.map((wig) => (
+              {filteredAndSortedWigs.map((wig) => (
                 <TableRow
                   key={wig.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -253,87 +249,75 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       </div>
 
       {/* Wig Details Dialog */}
-      <Dialog open={!!selectedWig} onOpenChange={() => setSelectedWig(null)}>
-        <DialogContent className="max-w-3xl">
+      <WigDetailsDialog
+        wig={selectedWig}
+        open={!!selectedWig}
+        onClose={() => setSelectedWig(null)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteWigDialog
+        wig={deleteWig}
+        open={!!deleteWig}
+        onClose={() => setDeleteWig(null)}
+        onConfirm={async () => {
+          if (!deleteWig) return;
+          const { error } = await supabase
+            .from('wigs')
+            .delete()
+            .eq('id', deleteWig.id);
+
+          if (error) {
+            console.error('Error deleting wig:', error);
+            toast.error("Failed to delete wig");
+            return;
+          }
+
+          toast.success("Wig deleted successfully!");
+          queryClient.invalidateQueries({ queryKey: ['wigs'] });
+          setDeleteWig(null);
+        }}
+      />
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={() => {
+        setIsEditDialogOpen(false);
+        setEditWigData(null);
+        setErrors({});
+      }}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Wig Details</DialogTitle>
+            <DialogTitle>Edit Wig</DialogTitle>
           </DialogHeader>
-          {selectedWig && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div>
-                  <span className="font-semibold">Barcode:</span> {selectedWig.barcode}
-                </div>
-                <div>
-                  <span className="font-semibold">Name:</span> {selectedWig.name}
-                </div>
-                <div>
-                  <span className="font-semibold">Style:</span> {selectedWig.style}
-                </div>
-                <div>
-                  <span className="font-semibold">Length:</span> {selectedWig.length}
-                </div>
-                <div>
-                  <span className="font-semibold">Color:</span> {selectedWig.color}
-                </div>
-                <div>
-                  <span className="font-semibold">Hair Type:</span> {selectedWig.hair_type}
-                </div>
-                <div>
-                  <span className="font-semibold">Hair Texture:</span> {selectedWig.hair_texture}
-                </div>
-                <div>
-                  <span className="font-semibold">Size:</span> {selectedWig.size}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div>
-                  <span className="font-semibold">Price:</span> ${selectedWig.price}
-                </div>
-                <div>
-                  <span className="font-semibold">Status:</span> {selectedWig.status}
-                </div>
-                <div>
-                  <span className="font-semibold">Client Name:</span> {selectedWig.client_name || "-"}
-                </div>
-                <div>
-                  <span className="font-semibold">New Order:</span> {selectedWig.new_order ? "Yes" : "No"}
-                </div>
-                <div>
-                  <span className="font-semibold">Location:</span> {selectedWig.location}
-                </div>
-                <div>
-                  <span className="font-semibold">Cost Price:</span> ${selectedWig.cost_price}
-                </div>
-                <div>
-                  <span className="font-semibold">Receive Date:</span> {selectedWig.receive_date}
-                </div>
-                <div>
-                  <span className="font-semibold">Sold Date:</span> {selectedWig.sold_date || "-"}
-                </div>
+          {editWigData && (
+            <div className="space-y-4">
+              <WigFormFields
+                wigData={editWigData}
+                setWigData={setEditWigData}
+                errors={errors}
+              />
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditWigData(null);
+                    setErrors({});
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Save Changes
+                </Button>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteWig} onOpenChange={() => setDeleteWig(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the wig "{deleteWig?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteWig(null)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

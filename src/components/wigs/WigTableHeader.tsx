@@ -19,6 +19,10 @@ export const WigTableHeader = ({ onSort, sortConfig, onFilterChange, filterValue
     { key: 'status', label: 'Status' },
   ];
 
+  const stopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <TableHeader>
       <TableRow>
@@ -35,19 +39,19 @@ export const WigTableHeader = ({ onSort, sortConfig, onFilterChange, filterValue
                   sortConfig?.key === column.key ? 'text-primary' : ''
                 }`} />
               </div>
-              <Select
-                value={filterValues[column.key] || ''}
-                onValueChange={(value) => onFilterChange(column.key, value)}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Filter..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All</SelectItem>
-                  {/* Add filter options based on unique values */}
-                </SelectContent>
-              </Select>
+              <div onClick={stopPropagation}>
+                <Select
+                  value={filterValues[column.key] || ''}
+                  onValueChange={(value) => onFilterChange(column.key, value)}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Filter..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </TableHead>
         ))}
