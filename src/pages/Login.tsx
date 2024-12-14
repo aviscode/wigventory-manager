@@ -8,7 +8,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -18,7 +17,6 @@ const Login = () => {
 
     checkUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         navigate("/inventory");
@@ -52,6 +50,8 @@ const Login = () => {
             }
           }}
           providers={[]}
+          view="sign_in"
+          showLinks={false}
         />
       </div>
     </div>
