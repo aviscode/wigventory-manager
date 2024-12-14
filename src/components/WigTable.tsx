@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye } from "lucide-react";
+import { Edit, Trash2, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +18,18 @@ interface WigTableProps {
   searchTerm: string;
 }
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+} | null;
+
 const WigTable = ({ searchTerm }: WigTableProps) => {
   const [selectedWig, setSelectedWig] = useState<any | null>(null);
+  const [deleteWig, setDeleteWig] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const queryClient = useQueryClient();
 
-  // Fetch wigs from Supabase
   const { data: wigs, isLoading } = useQuery({
     queryKey: ['wigs'],
     queryFn: async () => {
@@ -42,28 +49,52 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     },
   });
 
-  const filteredWigs = wigs?.filter(
+  const sortedWigs = [...(wigs || [])].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue === null) return 1;
+    if (bValue === null) return -1;
+    
+    const comparison = aValue > bValue ? 1 : -1;
+    return sortConfig.direction === 'asc' ? comparison : -comparison;
+  });
+
+  const filteredWigs = sortedWigs.filter(
     (wig) =>
       wig.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wig.style.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wig.color?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wig.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       wig.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) ?? [];
+  );
+
+  const handleSort = (key: string) => {
+    setSortConfig(current => {
+      if (!current || current.key !== key) {
+        return { key, direction: 'asc' };
+      }
+      if (current.direction === 'asc') {
+        return { key, direction: 'desc' };
+      }
+      return null;
+    });
+  };
 
   const handleEdit = async (wig: any) => {
     setSelectedWig(wig);
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    const confirmed = window.confirm("Are you sure you want to delete this wig?");
-    if (!confirmed) return;
+  const handleDelete = async () => {
+    if (!deleteWig) return;
 
     const { error } = await supabase
       .from('wigs')
       .delete()
-      .eq('id', id);
+      .eq('id', deleteWig.id);
 
     if (error) {
       console.error('Error deleting wig:', error);
@@ -73,11 +104,19 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
 
     toast.success("Wig deleted successfully!");
     queryClient.invalidateQueries({ queryKey: ['wigs'] });
+    setDeleteWig(null);
   };
 
   if (isLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
+
+  const renderSortIcon = (key: string) => {
+    if (sortConfig?.key !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
 
   return (
     <>
@@ -114,7 +153,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(wig.id);
+                      setDeleteWig(wig);
                     }}
                     className="text-red-500 hover:text-red-700"
                   >
@@ -129,12 +168,42 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
           <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[100px]">Barcode</TableHead>
-                <TableHead className="min-w-[150px]">Name</TableHead>
-                <TableHead className="min-w-[100px]">Style</TableHead>
-                <TableHead className="min-w-[100px]">Color</TableHead>
-                <TableHead className="min-w-[100px]">Price</TableHead>
-                <TableHead className="min-w-[100px]">Status</TableHead>
+                <TableHead 
+                  className="min-w-[100px] cursor-pointer"
+                  onClick={() => handleSort('barcode')}
+                >
+                  Barcode {renderSortIcon('barcode')}
+                </TableHead>
+                <TableHead 
+                  className="min-w-[150px] cursor-pointer"
+                  onClick={() => handleSort('name')}
+                >
+                  Name {renderSortIcon('name')}
+                </TableHead>
+                <TableHead 
+                  className="min-w-[100px] cursor-pointer"
+                  onClick={() => handleSort('style')}
+                >
+                  Style {renderSortIcon('style')}
+                </TableHead>
+                <TableHead 
+                  className="min-w-[100px] cursor-pointer"
+                  onClick={() => handleSort('color')}
+                >
+                  Color {renderSortIcon('color')}
+                </TableHead>
+                <TableHead 
+                  className="min-w-[100px] cursor-pointer"
+                  onClick={() => handleSort('price')}
+                >
+                  Price {renderSortIcon('price')}
+                </TableHead>
+                <TableHead 
+                  className="min-w-[100px] cursor-pointer"
+                  onClick={() => handleSort('status')}
+                >
+                  Status {renderSortIcon('status')}
+                </TableHead>
                 <TableHead className="min-w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -168,7 +237,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(wig.id);
+                          setDeleteWig(wig);
                         }}
                         className="text-red-500 hover:text-red-700"
                       >
@@ -245,6 +314,26 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteWig} onOpenChange={() => setDeleteWig(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the wig "{deleteWig?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteWig(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

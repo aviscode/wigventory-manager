@@ -1,59 +1,58 @@
-import { useState } from "react";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { User } from "lucide-react";
+import { useEffect } from "react";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simple admin check - in real app, this would be a proper auth system
-    if (username === "admin" && password === "admin") {
-      localStorage.setItem("isLoggedIn", "true");
-      toast.success("Successfully logged in!");
-      navigate("/inventory");
-    } else {
-      toast.error("Invalid credentials!");
-    }
-  };
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/inventory");
+      }
+    };
+
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate("/inventory");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-50 to-purple-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-primary/30 to-primary/10">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <div className="flex justify-center mb-6">
-          <div className="bg-primary p-3 rounded-full">
-            <User className="w-6 h-6 text-white" />
-          </div>
+          <img 
+            src="/lovable-uploads/4e851ff1-ef19-4719-8df7-40bcecf97763.png" 
+            alt="Rivky Wigs Logo" 
+            className="w-48 mb-4"
+          />
         </div>
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Wig Inventory Login</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <Input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-            Login
-          </Button>
-        </form>
+        <Auth
+          supabaseClient={supabase}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#FFDEE2',
+                  brandAccent: '#D946EF',
+                }
+              }
+            }
+          }}
+          providers={[]}
+        />
       </div>
     </div>
   );

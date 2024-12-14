@@ -25,8 +25,8 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#6B46C1",
-          foreground: "#FFFFFF",
+          DEFAULT: "#FFDEE2", // Soft pink from the logo
+          foreground: "#1A1F2C", // Dark text for contrast
         },
         secondary: {
           DEFAULT: "#F3F4F6",
@@ -41,8 +41,8 @@ export default {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#FFDEE2", // Matching the logo color
+          foreground: "#1A1F2C",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

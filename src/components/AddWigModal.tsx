@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AddWigModalProps {
   open: boolean;
@@ -12,29 +14,47 @@ interface AddWigModalProps {
 }
 
 const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
+  const queryClient = useQueryClient();
   const [wigData, setWigData] = useState({
     barcode: "",
     name: "",
     style: "",
     length: "",
     color: "",
-    hairType: "",
-    hairTexture: "",
+    hair_type: "",
+    hair_texture: "",
     size: "",
     price: "",
     status: "In Stock",
-    clientName: "",
-    newOrder: false,
+    client_name: "",
+    new_order: false,
     location: "",
-    costPrice: "",
-    receiveDate: new Date().toISOString().split('T')[0],
+    cost_price: "",
+    receive_date: new Date().toISOString().split('T')[0],
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Submitting wig data:", wigData);
-    toast.success("Wig added successfully!");
-    onClose();
+
+    try {
+      const { error } = await supabase
+        .from('wigs')
+        .insert([{
+          ...wigData,
+          price: parseFloat(wigData.price),
+          cost_price: wigData.cost_price ? parseFloat(wigData.cost_price) : null,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Wig added successfully!");
+      queryClient.invalidateQueries({ queryKey: ['wigs'] });
+      onClose();
+    } catch (error) {
+      console.error('Error adding wig:', error);
+      toast.error("Failed to add wig");
+    }
   };
 
   return (
@@ -88,8 +108,8 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
             <div className="space-y-2">
               <Label htmlFor="hairType">Hair Type</Label>
               <Select
-                value={wigData.hairType}
-                onValueChange={(value) => setWigData({ ...wigData, hairType: value })}
+                value={wigData.hair_type}
+                onValueChange={(value) => setWigData({ ...wigData, hair_type: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select hair type" />
@@ -104,8 +124,8 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
               <Label htmlFor="hairTexture">Hair Texture</Label>
               <Input
                 id="hairTexture"
-                value={wigData.hairTexture}
-                onChange={(e) => setWigData({ ...wigData, hairTexture: e.target.value })}
+                value={wigData.hair_texture}
+                onChange={(e) => setWigData({ ...wigData, hair_texture: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -138,8 +158,8 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
               <Input
                 id="costPrice"
                 type="number"
-                value={wigData.costPrice}
-                onChange={(e) => setWigData({ ...wigData, costPrice: e.target.value })}
+                value={wigData.cost_price}
+                onChange={(e) => setWigData({ ...wigData, cost_price: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -162,8 +182,8 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
               <Label htmlFor="clientName">Client Name</Label>
               <Input
                 id="clientName"
-                value={wigData.clientName}
-                onChange={(e) => setWigData({ ...wigData, clientName: e.target.value })}
+                value={wigData.client_name}
+                onChange={(e) => setWigData({ ...wigData, client_name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -179,15 +199,15 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
               <Input
                 id="receiveDate"
                 type="date"
-                value={wigData.receiveDate}
-                onChange={(e) => setWigData({ ...wigData, receiveDate: e.target.value })}
+                value={wigData.receive_date}
+                onChange={(e) => setWigData({ ...wigData, receive_date: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="newOrder">New Order</Label>
               <Select
-                value={wigData.newOrder ? "yes" : "no"}
-                onValueChange={(value) => setWigData({ ...wigData, newOrder: value === "yes" })}
+                value={wigData.new_order ? "yes" : "no"}
+                onValueChange={(value) => setWigData({ ...wigData, new_order: value === "yes" })}
               >
                 <SelectTrigger>
                   <SelectValue />
