@@ -9,7 +9,72 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      wigs: {
+        Row: {
+          barcode: string
+          client_name: string | null
+          color: string | null
+          cost_price: number | null
+          created_at: string | null
+          hair_texture: string | null
+          hair_type: string | null
+          id: string
+          length: string | null
+          location: string | null
+          name: string
+          new_order: boolean | null
+          price: number
+          receive_date: string | null
+          size: string | null
+          sold_date: string | null
+          status: string | null
+          style: string
+          updated_at: string | null
+        }
+        Insert: {
+          barcode: string
+          client_name?: string | null
+          color?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          hair_texture?: string | null
+          hair_type?: string | null
+          id?: string
+          length?: string | null
+          location?: string | null
+          name: string
+          new_order?: boolean | null
+          price: number
+          receive_date?: string | null
+          size?: string | null
+          sold_date?: string | null
+          status?: string | null
+          style: string
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string
+          client_name?: string | null
+          color?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          hair_texture?: string | null
+          hair_type?: string | null
+          id?: string
+          length?: string | null
+          location?: string | null
+          name?: string
+          new_order?: boolean | null
+          price?: number
+          receive_date?: string | null
+          size?: string | null
+          sold_date?: string | null
+          status?: string | null
+          style?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
