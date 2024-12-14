@@ -15,6 +15,7 @@ interface AddWigModalProps {
 
 const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
   const queryClient = useQueryClient();
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [wigData, setWigData] = useState({
     barcode: "",
     name: "",
@@ -33,17 +34,39 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
     receive_date: new Date().toISOString().split('T')[0],
   });
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    // Required fields validation
+    if (!wigData.barcode) newErrors.barcode = "Barcode is required";
+    if (!wigData.name) newErrors.name = "Name is required";
+    if (!wigData.style) newErrors.style = "Style is required";
+    if (!wigData.price) {
+      newErrors.price = "Price is required";
+    } else if (isNaN(Number(wigData.price)) || Number(wigData.price) <= 0) {
+      newErrors.price = "Price must be a valid positive number";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Submitting wig data:", wigData);
+
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('wigs')
         .insert([{
           ...wigData,
-          price: parseFloat(wigData.price),
-          cost_price: wigData.cost_price ? parseFloat(wigData.cost_price) : null,
+          price: Number(wigData.price),
+          cost_price: wigData.cost_price ? Number(wigData.cost_price) : null,
         }]);
 
       if (error) throw error;
@@ -66,28 +89,34 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="barcode">Barcode</Label>
+              <Label htmlFor="barcode">Barcode *</Label>
               <Input
                 id="barcode"
                 value={wigData.barcode}
                 onChange={(e) => setWigData({ ...wigData, barcode: e.target.value })}
+                className={errors.barcode ? "border-red-500" : ""}
               />
+              {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={wigData.name}
                 onChange={(e) => setWigData({ ...wigData, name: e.target.value })}
+                className={errors.name ? "border-red-500" : ""}
               />
+              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="style">Style</Label>
+              <Label htmlFor="style">Style *</Label>
               <Input
                 id="style"
                 value={wigData.style}
                 onChange={(e) => setWigData({ ...wigData, style: e.target.value })}
+                className={errors.style ? "border-red-500" : ""}
               />
+              {errors.style && <p className="text-sm text-red-500">{errors.style}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="length">Length</Label>
@@ -145,13 +174,17 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($)</Label>
+              <Label htmlFor="price">Price ($) *</Label>
               <Input
                 id="price"
                 type="number"
                 value={wigData.price}
                 onChange={(e) => setWigData({ ...wigData, price: e.target.value })}
+                className={errors.price ? "border-red-500" : ""}
+                min="0"
+                step="0.01"
               />
+              {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="costPrice">Cost Price ($)</Label>
@@ -160,6 +193,8 @@ const AddWigModal = ({ open, onClose }: AddWigModalProps) => {
                 type="number"
                 value={wigData.cost_price}
                 onChange={(e) => setWigData({ ...wigData, cost_price: e.target.value })}
+                min="0"
+                step="0.01"
               />
             </div>
             <div className="space-y-2">
