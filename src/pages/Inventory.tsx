@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import WigTable from "@/components/WigTable";
+import WigTableContainer from "@/components/wigs/WigTableContainer";
 import AddWigModal from "@/components/AddWigModal";
 import { Search, Plus } from "lucide-react";
 import Header from "@/components/Header";
@@ -36,7 +36,7 @@ const Inventory = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <WigTable searchTerm={searchTerm} />
+          <WigTableContainer searchTerm={searchTerm} />
         </div>
         <AddWigModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
       </div>
