@@ -32,7 +32,9 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
-  const { data: wigs, isLoading } = useQuery({
+  console.log('Rendering WigTable component');
+
+  const { data: wigs, isLoading, error } = useQuery({
     queryKey: ['wigs'],
     queryFn: async () => {
       console.log('Fetching wigs from Supabase...');
@@ -43,6 +45,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       
       if (error) {
         console.error('Error fetching wigs:', error);
+        toast.error("Failed to load wigs");
         throw error;
       }
       
@@ -50,6 +53,12 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       return data;
     },
   });
+
+  if (error) {
+    console.error('Error in WigTable:', error);
+    toast.error("Failed to load inventory");
+    return <div className="p-4 text-red-500">Error loading inventory</div>;
+  }
 
   const handleSort = (key: string) => {
     setSortConfig(current => {
@@ -147,6 +156,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     });
 
   if (isLoading) {
+    console.log('WigTable is in loading state');
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -165,6 +175,8 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       </div>
     );
   }
+
+  console.log('WigTable rendering with data:', filteredAndSortedWigs);
 
   return (
     <>
