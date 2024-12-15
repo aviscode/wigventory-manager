@@ -34,7 +34,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
 
   console.log('Rendering WigTable component');
 
-  const { data: wigs, isLoading, error } = useQuery({
+  const { data: wigs = [], isLoading, error } = useQuery({
     queryKey: ['wigs'],
     queryFn: async () => {
       console.log('Fetching wigs from Supabase...');
@@ -50,7 +50,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       }
       
       console.log('Fetched wigs:', data);
-      return data;
+      return data || [];
     },
   });
 
@@ -128,7 +128,7 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     }
   };
 
-  const filteredAndSortedWigs = (wigs || [])
+  const filteredAndSortedWigs = wigs
     .filter(wig => {
       return Object.entries(filterValues).every(([column, value]) => {
         if (!value) return true;
@@ -155,8 +155,11 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
 
+  console.log('WigTable is in loading state:', isLoading);
+  console.log('WigTable has data:', wigs.length > 0);
+  console.log('Filtered and sorted wigs:', filteredAndSortedWigs);
+
   if (isLoading) {
-    console.log('WigTable is in loading state');
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -175,8 +178,6 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
       </div>
     );
   }
-
-  console.log('WigTable rendering with data:', filteredAndSortedWigs);
 
   return (
     <>
