@@ -1,15 +1,15 @@
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { WigTableHeader } from "./wigs/WigTableHeader";
-import { WigDetailsDialog } from "./wigs/WigDetailsDialog";
-import { DeleteWigDialog } from "./wigs/DeleteWigDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WigFormFields } from "./wigs/WigFormFields";
+import { WigDetailsDialog } from "./wigs/WigDetailsDialog";
+import { DeleteWigDialog } from "./wigs/DeleteWigDialog";
+import { WigTableLoading } from "./wigs/WigTableLoading";
+import { WigTableMobile } from "./wigs/WigTableMobile";
+import { WigTableDesktop } from "./wigs/WigTableDesktop";
+import { Button } from "./ui/button";
 
 interface WigTableProps {
   searchTerm: string;
@@ -119,7 +119,6 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
 
   const filteredAndSortedWigs = (wigs || [])
     .filter(wig => {
-      // Apply column filters
       return Object.entries(filterValues).every(([column, value]) => {
         if (!value) return true;
         return String(wig[column]).toLowerCase().includes(value.toLowerCase());
@@ -146,57 +145,10 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
     });
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading...</div>;
-  }
-
-  return (
-    <>
+    return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          {/* Mobile view */}
-          <div className="md:hidden">
-            {filteredAndSortedWigs.map((wig) => (
-              <div
-                key={wig.id}
-                className="p-4 border-b cursor-pointer hover:bg-gray-50"
-                onClick={() => setSelectedWig(wig)}
-              >
-                <div className="font-medium">{wig.name}</div>
-                <div className="text-sm text-gray-500 mt-1">
-                  <div>Style: {wig.style}</div>
-                  <div>Color: {wig.color}</div>
-                  <div>Price: ${wig.price}</div>
-                  <div>Status: {wig.status}</div>
-                </div>
-                <div className="flex justify-end mt-2 space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(wig);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteWig(wig);
-                    }}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop view */}
-          <Table className="hidden md:table">
+          <Table>
             <WigTableHeader
               onSort={handleSort}
               sortConfig={sortConfig}
@@ -204,58 +156,43 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
               filterValues={filterValues}
             />
             <TableBody>
-              {filteredAndSortedWigs.map((wig) => (
-                <TableRow
-                  key={wig.id}
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => setSelectedWig(wig)}
-                >
-                  <TableCell>{wig.barcode}</TableCell>
-                  <TableCell className="font-medium">{wig.name}</TableCell>
-                  <TableCell>{wig.style}</TableCell>
-                  <TableCell>{wig.color}</TableCell>
-                  <TableCell>${wig.price}</TableCell>
-                  <TableCell>{wig.status}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(wig);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteWig(wig);
-                        }}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              <WigTableLoading />
             </TableBody>
           </Table>
         </div>
       </div>
+    );
+  }
 
-      {/* Wig Details Dialog */}
+  return (
+    <>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <WigTableMobile
+            wigs={filteredAndSortedWigs}
+            onEdit={handleEdit}
+            onDelete={setDeleteWig}
+            onSelect={setSelectedWig}
+          />
+          <WigTableDesktop
+            wigs={filteredAndSortedWigs}
+            onEdit={handleEdit}
+            onDelete={setDeleteWig}
+            onSelect={setSelectedWig}
+            onSort={handleSort}
+            sortConfig={sortConfig}
+            onFilterChange={handleFilterChange}
+            filterValues={filterValues}
+          />
+        </div>
+      </div>
+
       <WigDetailsDialog
         wig={selectedWig}
         open={!!selectedWig}
         onClose={() => setSelectedWig(null)}
       />
 
-      {/* Delete Confirmation Dialog */}
       <DeleteWigDialog
         wig={deleteWig}
         open={!!deleteWig}
@@ -279,7 +216,6 @@ const WigTable = ({ searchTerm }: WigTableProps) => {
         }}
       />
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={() => {
         setIsEditDialogOpen(false);
         setEditWigData(null);
