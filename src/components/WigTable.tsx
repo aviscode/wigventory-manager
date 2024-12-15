@@ -3,12 +3,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody } from "@/components/ui/table";
 import { WigFormFields } from "./wigs/WigFormFields";
 import { WigDetailsDialog } from "./wigs/WigDetailsDialog";
 import { DeleteWigDialog } from "./wigs/DeleteWigDialog";
 import { WigTableLoading } from "./wigs/WigTableLoading";
 import { WigTableMobile } from "./wigs/WigTableMobile";
 import { WigTableDesktop } from "./wigs/WigTableDesktop";
+import { WigTableHeader } from "./wigs/WigTableHeader";
 import { Button } from "./ui/button";
 
 interface WigTableProps {
